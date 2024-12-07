@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Day2 {
 	
@@ -15,6 +16,7 @@ public class Day2 {
 	private static final int MIN_DIFFERENCE = 1;
     private static final int MAX_DIFFERENCE = 3;
 	private static int safeReports;
+	private static int safeDampenerReports;
 	
 	public static void main(String[] args) {
 		
@@ -41,11 +43,19 @@ public class Day2 {
 					safeReports++;
 				}
 				
+				if(isSafeWithDampener(arr)) {
+					safeDampenerReports++;
+				}
+				
+				
+				
 				
 			}
 			
 			
 			System.out.printf("%d reports are safe", safeReports);
+			System.out.println();
+			System.out.printf("%d reports are safe with dampener",safeDampenerReports);
 			
 		} catch(IOException e) {
 			
@@ -71,6 +81,8 @@ public class Day2 {
 			int difference = levels[i] - levels[i - 1];
 			
 			if(Math.abs(difference) <  MIN_DIFFERENCE|| Math.abs(difference) > MAX_DIFFERENCE) {
+				
+				
 				return false;
 			}
 			
@@ -84,6 +96,35 @@ public class Day2 {
 		
 		return true;
 	}
+	
+	private static boolean isSafeWithDampener(int[] levels) {
+		
+		
+		if(isSafe(levels)) {
+			return true;
+		}
+		
+		for(int i = 0; i < levels.length; i++) {
+			
+			int[] modifiedLevels = removeElementAtIndex(levels, i);
+			
+			if(isSafe(modifiedLevels)) {
+				return true;
+			}
+		}
+		
+		return false;
+		
+	}
+	
+	private static int[] removeElementAtIndex(int[] arr, int index) {
+		
+		return IntStream.range(0, arr.length)
+				.filter(i -> i != index)
+				.map(i -> arr[i])
+				.toArray();
+	}
+	
 	
 	
 	
