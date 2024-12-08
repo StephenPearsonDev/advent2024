@@ -12,7 +12,8 @@ import java.util.regex.Pattern;
 
 public class Day4 {
 
-    public static int count = 0;
+    public static int countPartOne = 0;
+    public static int countPartTwo = 0;
 
     public static void main(String[] args) {
         try (InputStream is = Day4.class.getResourceAsStream("/dataInput/day4/input.txt")) {
@@ -26,26 +27,55 @@ public class Day4 {
             Pattern forwardPattern = Pattern.compile("XMAS");
             Pattern backwardPattern = Pattern.compile("SAMX");
 
+            //solution for part 1
             for (String line : allLines) {
                 Matcher forwardMatcher = forwardPattern.matcher(line);
                 Matcher backwardMatcher = backwardPattern.matcher(line);
 
                 while (forwardMatcher.find()) {
-                    count++;
+                    countPartOne++;
                 }
 
                 while (backwardMatcher.find()) {
-                    count++;
+                    countPartOne++;
+                }
+            }
+            
+            
+            //solution for part 2
+            for (int row = 1; row < rows.size() - 1; row++) {
+                for (int col = 1; col < rows.get(0).length() - 1; col++) {
+                    if (isXMas(rows, row, col)) {
+                        countPartTwo++;
+                    }
                 }
             }
 
-            System.out.println("Total occurrences of XMAS: " + count);
+            System.out.println("Part One - Total occurrences of XMAS: " + countPartOne);
+            System.out.println("Part Two - Total occurrences of X-MAS: " + countPartTwo);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+    
+    
+    //couldn't figure it out with the regex approach like before so did it manually
+    private static boolean isXMas(List<String> rows, int row, int col) {
+        char topLeft = rows.get(row - 1).charAt(col - 1);
+        char topRight = rows.get(row - 1).charAt(col + 1);
+        char middle = rows.get(row).charAt(col);
+        char bottomLeft = rows.get(row + 1).charAt(col - 1);
+        char bottomRight = rows.get(row + 1).charAt(col + 1);
 
+        return ((topLeft == 'M' && middle == 'A' && bottomRight == 'S') ||
+                (topLeft == 'S' && middle == 'A' && bottomRight == 'M')) &&
+               ((topRight == 'M' && middle == 'A' && bottomLeft == 'S') ||
+                (topRight == 'S' && middle == 'A' && bottomLeft == 'M'));
+    }
+    
+    
+    //not very elegant approach. Made new lists of "rows" with all the directions
     private static List<String> getAllDirections(List<String> rows) {
         List<String> allLines = new ArrayList<>();
         int rowCount = rows.size();
