@@ -22,6 +22,8 @@ bin/
 
 
 day*/input*.txt
+*.txt
+
 
 Desktop.ini
 $RECYCLE.BIN/
@@ -30,5 +32,6 @@ Thumbs.db
 .DS_Store
 
 
+/resources/
 
 .vscode/

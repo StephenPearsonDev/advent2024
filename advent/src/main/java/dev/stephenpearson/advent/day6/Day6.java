@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -30,7 +28,6 @@ public class Day6 {
 
             int[] guardCoords = new int[] { -1, -1 };
 
-     
             IntStream.range(0, map.length).forEach(row -> {
                 int colIndex = IntStream.range(0, map[row].length)
                         .filter(col -> map[row][col] == '^')
@@ -42,14 +39,38 @@ public class Day6 {
                 }
             });
 
-    
-            if (guardCoords[0] == -1 || guardCoords[1] == -1) {
-                System.out.println("No guard found in the map!");
-                return;
+            
+//            if (guardCoords[0] == -1 || guardCoords[1] == -1) {
+//                System.out.println("No guard found in the map!");
+//                return;
+//            }
+            
+            
+            //dont want to change original array so i can use it for second one
+            //Part 2 below
+            int distinctPositions = travel(guardCoords.clone());
+
+            System.out.println("Distinct positions visited: " + distinctPositions);
+
+            int loopPositions = 0;
+
+            for (int row = 0; row < map.length; row++) {
+                for (int col = 0; col < map[row].length; col++) {
+                    if (map[row][col] == '.' && !(row == guardCoords[0] && col == guardCoords[1])) {
+                    	
+                    	//Brute force placing and removing and checking if a cycle appears.
+                    	//It's very slow on my computer - 5 seconds. Must be a faster way I imagine I could use a
+                    	//linked list or graph to try to find a cycle quicker but I spent too much time already
+                        placeObstacle(new int[] { row, col });
+                        if (checkIfCyclic(guardCoords.clone())) {
+                            loopPositions++;
+                        }
+                        removeObstacle(new int[] { row, col });
+                    }
+                }
             }
 
-            int distinctPositions = travel(guardCoords);
-            System.out.println("Distinct positions visited: " + distinctPositions);
+            System.out.println("Possible obstruction positions: " + loopPositions);
 
         } catch (IOException e) {
             System.out.println("error reading file");
@@ -59,31 +80,19 @@ public class Day6 {
     }
 
     public static int travel(int[] guardCoords) {
-    	
-    	//distinct positions visited on the map
         Set<String> visited = new HashSet<>();
-        
         visited.add(guardCoords[0] + "," + guardCoords[1]);
 
- 
         while (guardOnMap) {
-
-  
             int[] nextPos = nextPosition(guardCoords, currentDirection);
-
- 
             if (!isOnMap(nextPos)) {
                 guardOnMap = false;
                 break;
             }
-
-        
-            if (map[nextPos[0]][nextPos[1]] == '#') {
+            if (map[nextPos[0]][nextPos[1]] == '#' || map[nextPos[0]][nextPos[1]] == 'O') {
                 currentDirection = rotate(currentDirection);
-                continue; 
+                continue;
             }
-
-         
             guardCoords[0] = nextPos[0];
             guardCoords[1] = nextPos[1];
             visited.add(guardCoords[0] + "," + guardCoords[1]);
@@ -91,33 +100,35 @@ public class Day6 {
 
         return visited.size();
     }
-
-
+    
+    
+    
+    
     private static int[] nextPosition(int[] coords, Directions dir) {
-        int r = coords[0];
-        int c = coords[1];
-
+        int row = coords[0];
+        int col = coords[1];
         switch (dir) {
             case NORTH:
-                return new int[] { r - 1, c };
+                return new int[] { row - 1, col };
             case EAST:
-                return new int[] { r, c + 1 };
+                return new int[] { row, col + 1 };
             case SOUTH:
-                return new int[] { r + 1, c };
+                return new int[] { row + 1, col };
             case WEST:
-                return new int[] { r, c - 1 };
-            default:
-                throw new IllegalArgumentException("Unknown direction: " + dir);
+                return new int[] { row, col - 1 };
         }
+        throw new IllegalArgumentException();
     }
-
+    
+    
 
     private static boolean isOnMap(int[] pos) {
-        int r = pos[0];
-        int c = pos[1];
-        return r >= 0 && r < map.length && c >= 0 && c < map[0].length;
+        int row = pos[0];
+        int col = pos[1];
+        return row >= 0 && row < map.length && col >= 0 && col < map[0].length;
     }
-
+    
+    
 
     public static Directions rotate(Directions direction) {
         switch (direction) {
@@ -129,9 +140,8 @@ public class Day6 {
                 return Directions.WEST;
             case WEST:
                 return Directions.NORTH;
-            default:
-                throw new IllegalArgumentException("Unexpected direction: " + direction);
         }
+        throw new IllegalArgumentException();
     }
 
     public enum Directions {
@@ -139,6 +149,54 @@ public class Day6 {
         EAST,
         SOUTH,
         WEST
+    }
+
+    private static boolean checkIfCyclic(int[] startCoords) {
+        Set<String> states = new HashSet<>();
+        Directions dir = Directions.NORTH;
+
+        int[] coords = startCoords.clone();
+
+        int limit = map.length * map[0].length * 4;
+        int steps = 0;
+
+        while (steps < limit) {
+            String state = coords[0] + "," + coords[1] + "," + dir;
+            if (states.contains(state)) {
+                return true;
+            }
+
+            states.add(state);
+            int[] nextPos = nextPosition(coords, dir);
+
+            if (!isOnMap(nextPos)) {
+                return false;
+            }
+            if (map[nextPos[0]][nextPos[1]] == '#' || map[nextPos[0]][nextPos[1]] == 'O') {
+                dir = rotate(dir);
+            } else {
+                coords = nextPos;
+            }
+
+            steps++;
+        }
+        return false;
+    }
+    
+    
+    
+
+    private static void placeObstacle(int[] obstacleCoords) {
+
+        map[obstacleCoords[0]][obstacleCoords[1]] = 'O';
+
+    }
+    
+
+    private static void removeObstacle(int[] obstacleCoords) {
+
+        map[obstacleCoords[0]][obstacleCoords[1]] = '.';
+
     }
 
 }
