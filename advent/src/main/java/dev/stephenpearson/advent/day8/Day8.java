@@ -29,19 +29,7 @@ public class Day8 {
 			
 			BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 			
-			//List<char[]> mapLines = reader.lines().map(String::toCharArray).toList();
-//			mapLines.forEach(System.out::println);			
-//			
-//			Set<Character> uniqueAntenna = new HashSet<>();
-//			mapLines.stream().forEach(line -> {
-//				for(char c : line) {
-//					uniqueAntenna.add(c);
-//				}
-//			});
-//			
-//			uniqueAntenna.remove('.');
-//			uniqueAntenna.forEach(System.out::println);
-//			
+		
 			char[][] antennaMap = reader.lines().map(String::toCharArray).toArray(char[][]::new);
 			
 			Map<Character, List<int[]>> coordMap = new HashMap<>();
@@ -72,51 +60,19 @@ public class Day8 {
 			//took me ages to figure out the problem - the contents of the array werent being checked so used a record instead. Was getting too many duplicates.
 			//Set<int[]> uniqueAntiNodesCoords = new HashSet<>();
 			
-			Set<AntiNodeCoordinate> uniqueAntiNodeCoords = new HashSet<>();
+			Set<AntiNodeCoordinate> uniqueAntiNodeCoords = getUniqueAntiNodeCoordinates(coordMap, antennaMap);
+           
 			
-			for(Map.Entry<Character, List<int[]>> entry : coordMap.entrySet()) {
-				
-				List<int[]> positions  = entry.getValue();
-				
-				for(int i = 0; i < positions.size(); i++) {
-					
-					for(int j = i+1; j < positions.size(); j++) {
-						
-						
-						//build pairs of positions to calculate the antinodes
-						int[] p1 = positions.get(i);
-						int[] p2 = positions.get(j);
-						
-						//figure out the direction or which way its pointing
-						int dx = p2[0] - p1[0];
-						int dy = p2[1] - p1[1];
-
-						int[] antiNode1xy = {p1[0] - dx, p1[1] - dy}; 
-						int[] antiNode2xy = {p2[0] + dx, p2[1] + dy};
-						
-						//need to make sure these nodes are within the board still
-						if(isOnBoard(antiNode1xy,antennaMap)) {
-							uniqueAntiNodeCoords.add(new AntiNodeCoordinate(antiNode1xy[0], antiNode1xy[1]));
-							
-						}
-						
-						if(isOnBoard(antiNode2xy, antennaMap)) {
-							uniqueAntiNodeCoords.add(new AntiNodeCoordinate(antiNode2xy[0], antiNode2xy[1]));
-						}
-
-					}
-					
-				}
-				
-			}
-
+			Set<AntiNodeCoordinate> extendedUniqueAntiNodeCoords = getExtendedUniqueAntiNodeCoordinates(coordMap, antennaMap);
 			
+
 			
 			System.out.println("unique antiNodes: " +  uniqueAntiNodeCoords.size());
+			System.out.println("extended unique antiNodes: " +  extendedUniqueAntiNodeCoords.size());
 			
 			
-			
-			
+			debugAndPrintTest(getExtendedUniqueAntiNodeCoordinates(coordMap, antennaMap), antennaMap);
+
 		
 		} catch(IOException e) {
 			e.printStackTrace();
@@ -124,53 +80,156 @@ public class Day8 {
 		}
 	}
 	
+	
+	private static Set<AntiNodeCoordinate> getUniqueAntiNodeCoordinates(Map<Character, List<int[]>> coordMap, char[][] antennaMap) {
+		Set<AntiNodeCoordinate> uniqueAntiNodeCoords = new HashSet<>();
+		
+		for(Map.Entry<Character, List<int[]>> entry : coordMap.entrySet()) {
+			
+			List<int[]> positions  = entry.getValue();
+			
+			for(int i = 0; i < positions.size(); i++) {
+				
+				for(int j = i+1; j < positions.size(); j++) {
+					
+					
+					//build pairs of positions to calculate the antinodes
+					int[] p1 = positions.get(i);
+					int[] p2 = positions.get(j);
+					
+					//figure out the direction or which way its pointing
+					int dx = p2[0] - p1[0];
+					int dy = p2[1] - p1[1];
+
+					int[] antiNode1xy = {p1[0] - dx, p1[1] - dy}; 
+					int[] antiNode2xy = {p2[0] + dx, p2[1] + dy};
+					
+					
+					
+					//need to make sure these nodes are within the board still
+					if(isOnBoard(antiNode1xy,antennaMap)) {
+						uniqueAntiNodeCoords.add(new AntiNodeCoordinate(antiNode1xy[0], antiNode1xy[1]));
+						
+					}
+					
+					if(isOnBoard(antiNode2xy, antennaMap)) {
+						uniqueAntiNodeCoords.add(new AntiNodeCoordinate(antiNode2xy[0], antiNode2xy[1]));
+					}
+
+				}
+				
+			}
+			
+		}
+		
+		
+		
+		return uniqueAntiNodeCoords;
+	}
+	
+	
+	//just go along the vector until out of bounds? first brute force and calculate all positions, later optimize if time - memoize previously calculated positions?
+	private static Set<AntiNodeCoordinate> getExtendedUniqueAntiNodeCoordinates(Map<Character, List<int[]>> coordMap, char[][] antennaMap) {
+
+	    Set<AntiNodeCoordinate> extendedUniqueAntiNodeCoords = new HashSet<>();
+
+	    for (Map.Entry<Character, List<int[]>> entry : coordMap.entrySet()) {
+
+	        List<int[]> positions = entry.getValue();
+
+	        for (int i = 0; i < positions.size(); i++) {
+
+	            for (int j = i + 1; j < positions.size(); j++) {
+
+	                int[] p1 = positions.get(i);
+	                int[] p2 = positions.get(j);
+
+	                int dx = p2[0] - p1[0];
+	                int dy = p2[1] - p1[1];
+
+	                // Add the positions of p1 and p2 
+	                extendedUniqueAntiNodeCoords.add(new AntiNodeCoordinate(p1[0], p1[1]));
+	                extendedUniqueAntiNodeCoords.add(new AntiNodeCoordinate(p2[0], p2[1]));
+
+	                // Extend in both directions
+	                int[] antiNode1xy = {p1[0] - dx, p1[1] - dy};
+	                int[] antiNode2xy = {p2[0] + dx, p2[1] + dy};
+
+	                while (isOnBoardNew(antiNode1xy, antennaMap)) {
+	                    extendedUniqueAntiNodeCoords.add(new AntiNodeCoordinate(antiNode1xy[0], antiNode1xy[1]));
+	                    antiNode1xy[0] -= dx;
+	                    antiNode1xy[1] -= dy;
+	                }
+
+	                while (isOnBoardNew(antiNode2xy, antennaMap)) {
+	                    extendedUniqueAntiNodeCoords.add(new AntiNodeCoordinate(antiNode2xy[0], antiNode2xy[1]));
+	                    antiNode2xy[0] += dx;
+	                    antiNode2xy[1] += dy;
+	                }
+	            }
+	        }
+	    }
+
+	    return extendedUniqueAntiNodeCoords;
+	}
+
+	
 	//do out of bounds checks
-	public static boolean isOnBoard(int[] antiNodeCoords, char[][] antennaMap) {
-		//check both x and y coords for the antiNode
-		return (antiNodeCoords[0] >= 0 && antiNodeCoords[0] < antennaMap.length && antiNodeCoords[1] >= 0 && antiNodeCoords[1] < antennaMap.length);
+		private static boolean isOnBoard(int[] antiNodeCoords, char[][] antennaMap) {
+			
+			System.out.println("looking at coords: x - " + antiNodeCoords[0] +  " y - " + antiNodeCoords[1]);
+			//check both x and y coords for the antiNode
+			return (antiNodeCoords[0] >= 0 && antiNodeCoords[0] < antennaMap.length && antiNodeCoords[1] >= 0 && antiNodeCoords[1] < antennaMap.length);
+			
+		}
+		
+		private static boolean isOnBoardNew(int[] antiNodeCoords, char[][] antennaMap) {
+			
+			System.out.println("looking at coords: x: " + antiNodeCoords[0] +  " y: " + antiNodeCoords[1]);
+			//check both x and y coords for the antiNode
+			
+			if(antiNodeCoords[0] >= 0 && antiNodeCoords[0] < antennaMap.length && antiNodeCoords[1] >= 0 && antiNodeCoords[1] < antennaMap[0].length) {
+				System.out.println("returning true for: " +  antiNodeCoords[0] + " and " + antiNodeCoords[1]);
+				return true;
+			} else {
+				return false;
+			}
+			
+			
+		}
+	
+	private record AntiNodeCoordinate (int row, int col) {};
+	
+	//got stuck, need to print and see whats going on
+	private static void debugAndPrintTest(Set<AntiNodeCoordinate> antiNodes, char[][] antennaMap) {
+		
+		System.out.printf("there are %d nodes in the set\n", antiNodes.size());
+		System.out.println();
+		System.out.println("map before: ");
+		
+		Arrays.stream(antennaMap).forEach(System.out::println);
+		
+		
+		System.out.println();
+		System.out.println("map after: ");
+		int totalAntiNodes = antiNodes.size();
+		int overlappingNodes = 0;
+		
+		
+		for(AntiNodeCoordinate coord : antiNodes) {
+			char current = antennaMap[coord.row][coord.col];
+			antennaMap[coord.row][coord.col] = current == '.' ? '#' : current;
+			if (current != '.') overlappingNodes++;
+
+		}
+	
+		Arrays.stream(antennaMap).forEach(System.out::println);
+		System.out.println("Total anti nodes: " + totalAntiNodes);
+		System.out.println("Overlapping anti nodes: " + overlappingNodes);
+
 		
 	}
 	
-	public record AntiNodeCoordinate (int row, int col) {};
 	
-//	public static int[] findNext(List<int[]> arrs) {
-//		
-//		for(int i = 0; i < arrs.size(); i++) {
-//			
-//			
-//			for(int t= 0; t < arrs.get(i).length; t++) {
-//				
-//				int[] antiNodeCoords = new int[2];
-//				
-//				
-//				if(t+1 < arrs.get(i).length) {
-//					antiNodeCoords[0] = arrs.get(i)[t+1] - arrs.get(i)[t];
-//					antiNodeCoords[0] = arrs.get(i)[t+1] - arrs.get(i)[t];
-//					
-//				}
-//				
-//				
-//				
-//			}
-//			
-//			
-//			
-//		}
-//		
-//		return new int[] {1};
-//	}
-	//might be easier to find the coords of all the antenas and compare them against each other
-	//expand the search in a radial manner - assume antennas dont block or get in the way of each other
-//	public static int[][] searchForAntenna(int[][] antennaCoords) {
-//		
-//		//get instance of an antenna
-//
-//		
-//		
-//		
-//		
-//		return new int[1][1];
-//		
-//	}
 
 }
